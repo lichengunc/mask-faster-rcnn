@@ -1,0 +1,3 @@
+nms/_ext/*
+layer_utils/roi_pooling/_ext/*
+*.o
