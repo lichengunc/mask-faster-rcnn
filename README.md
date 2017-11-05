@@ -15,3 +15,7 @@ Run by (tf as extra/tag)
 ```
 - Train on RefCOCO_trainval and test on RefCOCO_test (300K/400K), **26.3** (nms)
 - Train on RefCOCOg_trainval and test on RefCOCOg_test (300K/400K), **28.5** (nms)
+
+### TODO
+- mask evaluation
+- script for mask prediction given boxes (from "stronger" Faster R-CNN results)
