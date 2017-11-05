@@ -363,7 +363,7 @@ class Network(nn.Module):
     # MASK, mask loss, only regress fg rois
     mask_targets = self._proposal_targets['mask_targets'] # (num_fg, 14, 14)
     mask_score   = self._predictions['mask_score']        # (num_fg, num_classes, 14, 14)
-    assert mask_targets.size(0) == mask_targets.size(1)
+    assert mask_targets.size(0) == mask_score.size(0)
     num_fg = mask_targets.size(0)
     fg_label = label[:num_fg]  # (num_fg, )
     fg_label = fg_label.view(num_fg, 1, 1, 1).expand(num_fg, 1, cfg.MASK_SIZE, cfg.MASK_SIZE)
@@ -423,7 +423,7 @@ class Network(nn.Module):
     - rois     : (n, 5) [0xyxy]
     - cls_prob : (n, num_class)
     - bbox_pred: (n, num_class*4)
-    - mask_prob: (n, num_classes, 14, 14)
+    - mask_prob: (num_fg, num_classes, 14, 14) eval or (n, num_classes, 14, 14) train
     """
     # This is just _build_network in tf-faster-rcnn
     torch.backends.cudnn.benchmark = False
