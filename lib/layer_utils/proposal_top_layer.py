@@ -13,7 +13,7 @@ from model.bbox_transform import bbox_transform_inv, clip_boxes
 import numpy.random as npr
 
 import torch
-
+from torch.autograd import Variable
 
 def proposal_top_layer(rpn_cls_prob, rpn_bbox_pred, im_info, _feat_stride, anchors, num_anchors):
   """A layer that just selects the top region proposals
@@ -49,8 +49,8 @@ def proposal_top_layer(rpn_cls_prob, rpn_bbox_pred, im_info, _feat_stride, ancho
     top_inds = top_inds.view(rpn_top_n)
 
   # Do the selection here
-  anchors = anchors[top_inds, :].contiguous()
-  rpn_bbox_pred = rpn_bbox_pred[top_inds, :].contiguous()
+  anchors = anchors[top_inds].contiguous()
+  rpn_bbox_pred = rpn_bbox_pred[top_inds].contiguous()
   scores = scores[top_inds].contiguous()
 
   # Convert anchors into proposals via bbox transformations
@@ -62,6 +62,6 @@ def proposal_top_layer(rpn_cls_prob, rpn_bbox_pred, im_info, _feat_stride, ancho
   # Output rois blob
   # Our RPN implementation only supports a single input image, so all
   # batch inds are 0
-  batch_inds = proposals.data.new(proposals.size(0), 1).zero_()
+  batch_inds = Variable(proposals.data.new(proposals.size(0), 1).zero_())
   blob = torch.cat([batch_inds, proposals], 1)
   return blob, scores
