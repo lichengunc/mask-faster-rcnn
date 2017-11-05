@@ -466,9 +466,11 @@ class Network(nn.Module):
     Return
     - masks    : Variable cuda (n, 14, 14), ranging [0,1]
     """
+    assert self._mode == 'TEST', 'only support testing mode'
+
     num_boxes = boxes.shape[0]
     rois = np.hstack([np.zeros((num_boxes, 1)), boxes]).astype(np.float32) # [0xyxy] 
-    rois = Variable(torch.from_numpy(rois).cuda())
+    rois = Variable(torch.from_numpy(rois).cuda(), volatile=True)
     if cfg.POOLING_MODE == 'crop':
       pool5 = self._crop_pool_layer(net_conv, rois)
     else:
@@ -478,7 +480,7 @@ class Network(nn.Module):
     mask_prob = self._mask_prediction(spatial_fc7) # (n, num_classes, 14, 14)
 
     # get masks from labels
-    labels = Variable(torch.from_numpy(labels).long().cuda())
+    labels = Variable(torch.from_numpy(labels).long().cuda(), volatile=True)
     labels = labels.view(num_boxes, 1, 1, 1).expand(num_boxes, 1, cfg.MASK_SIZE, cfg.MASK_SIZE)
     mask_prob = torch.gather(mask_prob, 1, labels)  # (num_boxes, 1, 14, 14)
     mask_prob = mask_prob.squeeze(1) # (num_boxes, 14, 14)
