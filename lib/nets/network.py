@@ -362,11 +362,11 @@ class Network(nn.Module):
 
     # MASK, mask loss, only regress fg rois
     mask_targets = self._proposal_targets['mask_targets'] # (num_fg, 14, 14)
-    mask_score   = self._predictions['mask_score']        # (n, num_classes, 14, 14)
+    mask_score   = self._predictions['mask_score']        # (num_fg, num_classes, 14, 14)
+    assert mask_targets.size(0) == mask_targets.size(1)
     num_fg = mask_targets.size(0)
     fg_label = label[:num_fg]  # (num_fg, )
     fg_label = fg_label.view(num_fg, 1, 1, 1).expand(num_fg, 1, cfg.MASK_SIZE, cfg.MASK_SIZE)
-    mask_score = mask_score[:num_fg] # (num_fg, num_classes, 14, 14)
     mask_score = torch.gather(mask_score, 1, fg_label) # (num_fg, 1, 14, 14)
     mask_score = mask_score.squeeze(1) # (num_fg, 14, 14)
     loss_mask = F.binary_cross_entropy_with_logits(mask_score, mask_targets)
@@ -441,9 +441,16 @@ class Network(nn.Module):
     if self._mode == 'TRAIN':
       torch.backends.cudnn.benchmark = True # benchmark because now the input size are fixed
     
-    spatial_fc7 = self._head_to_tail(pool5)
+    spatial_fc7 = self._head_to_tail(pool5)  # (num_rois, 2048, 7, 7)
     cls_prob, bbox_pred = self._region_classification(spatial_fc7)
-    mask_prob = self._mask_prediction(spatial_fc7)
+
+    if self._mode == 'TRAIN':
+      # we only run mask prediction on foreground regions
+      num_fg = self._proposal_targets['mask_targets'].size(0)
+      spatial_fc7 = spatial_fc7[:num_fg]
+      mask_prob = self._mask_prediction(spatial_fc7)  # (num_fg, num_classes, 14, 14)
+    else:
+      mask_prob = self._mask_prediction(spatial_fc7)  # (num_rois, num_classes, 14, 14)
     
     for k in self._predictions.keys():
       self._score_summaries[k] = self._predictions[k]
