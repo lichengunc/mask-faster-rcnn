@@ -284,7 +284,7 @@ __C.ANCHOR_RATIOS = [0.5,1,2]
 # Mask size
 __C.MASK_SIZE = 14
 
-__C.TRAIN.FROM_FRCN = True
+__C.TRAIN.FROM_FRCN = False
 
 
 
