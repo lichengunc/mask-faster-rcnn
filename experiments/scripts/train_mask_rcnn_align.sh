@@ -18,8 +18,8 @@ case ${DATASET} in
   coco_minus_refer)
     TRAIN_IMDB="coco_2014_train_minus_refer_valtest+coco_2014_valminusminival"
     TEST_IMDB="coco_2014_minival"
-    STEPSIZE="[350000]"
-    ITERS=490000
+    STEPSIZE="[800000]"
+    ITERS=1050000
     ANCHORS="[4,8,16,32]"
     RATIOS="[0.5,1,2]"
     ;;
@@ -44,26 +44,26 @@ set -x
 if [ ! -f ${NET_FINAL}.index ]; then
     if [[ ! -z  ${EXTRA_ARGS_SLUG}  ]]; then
         CUDA_VISIBLE_DEVICES=${GPU_ID} time python ./tools/trainval_net.py \
-            --weight data/frcn_weights/${NET}_faster_rcnn.pth \
+            --weight data/imagenet_weights/${NET}.pth \
             --imdb ${TRAIN_IMDB} \
             --imdbval ${TEST_IMDB} \
             --iters ${ITERS} \
-            --cfg experiments/cfgs/${NET}_from_frcn.yml \
+            --cfg experiments/cfgs/${NET}_align.yml \
             --tag ${EXTRA_ARGS_SLUG} \
             --net ${NET} \
             --set ANCHOR_SCALES ${ANCHORS} ANCHOR_RATIOS ${RATIOS} \
             TRAIN.STEPSIZE ${STEPSIZE} # ${EXTRA_ARGS}
     else
         CUDA_VISIBLE_DEVICES=${GPU_ID} time python ./tools/trainval_net.py \
-            --weight data/frcn_weights/${NET}_faster_rcnn.pth \
+            --weight data/imagenet_weights/${NET}.pth \
             --imdb ${TRAIN_IMDB} \
             --imdbval ${TEST_IMDB} \
             --iters ${ITERS} \
-            --cfg experiments/cfgs/${NET}_from_frcn.yml \
+            --cfg experiments/cfgs/${NET}_align.yml \
             --net ${NET} \
             --set ANCHOR_SCALES ${ANCHORS} ANCHOR_RATIOS ${RATIOS} \
             TRAIN.STEPSIZE ${STEPSIZE} # ${EXTRA_ARGS}
     fi
 fi
 
-./experiments/scripts/test_mask_rcnn_from_frcn.sh $@
+./experiments/scripts/test_mask_rcnn_align.sh $@

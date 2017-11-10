@@ -66,4 +66,4 @@ if [ ! -f ${NET_FINAL}.index ]; then
     fi
 fi
 
-./experiments/scripts/test_mask_rcnn.sh $@
+./experiments/scripts/test_mask_rcnn_notime.sh $@
