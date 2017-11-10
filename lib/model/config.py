@@ -286,6 +286,8 @@ __C.MASK_SIZE = 14
 
 __C.TRAIN.FROM_FRCN = False
 
+# if use original image size and rois to align
+__C.POOLING_ALIGN = False
 
 
 def get_output_dir(imdb, weights_filename):

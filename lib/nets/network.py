@@ -142,6 +142,39 @@ class Network(nn.Module):
     
     return crops
 
+  def _crop_pool_layer_align(self, bottom, rois, im_info, max_pool=True):
+    """
+    Note we use original im_info and rois to compute normalized grids,
+    instead of layer3's size and boxes/16. (I think my way is more accurate for RoIAlign.)
+    """
+    rois = rois.detach()
+    x1 = rois[:, 1::4]
+    y1 = rois[:, 2::4]
+    x2 = rois[:, 3::4]
+    y2 = rois[:, 4::4]
+    height, width = float(im_info[0][0]), float(im_info[0][1])  # use original height and width
+
+    # affine theta
+    zero = Variable(rois.data.new(rois.size(0), 1).zero_())
+    theta = torch.cat([\
+      (x2 - x1) / (width - 1),
+      zero,
+      (x1 + x2 - width + 1) / (width - 1),
+      zero,
+      (y2 - y1) / (height - 1),
+      (y1 + y2 - height + 1) / (height - 1)], 1).view(-1, 2, 3)
+
+    if max_pool:
+      pre_pool_size = cfg.POOLING_SIZE * 2
+      grid = F.affine_grid(theta, torch.Size((rois.size(0), 1, pre_pool_size, pre_pool_size)))
+      crops = F.grid_sample(bottom.expand(rois.size(0), bottom.size(1), bottom.size(2), bottom.size(3)), grid)
+      crops = F.max_pool2d(crops, 2, 2)
+    else:
+      grid = F.affine_grid(theta, torch.Size((rois.size(0), 1, cfg.POOLING_SIZE, cfg.POOLING_SIZE)))
+      crops = F.grid_sample(bottom.expand(rois.size(0), bottom.size(1), bottom.size(2), bottom.size(3)), grid)
+    
+    return crops
+
   def _anchor_target_layer(self, rpn_cls_score):
     rpn_labels, rpn_bbox_targets, rpn_bbox_inside_weights, rpn_bbox_outside_weights = \
       anchor_target_layer(
@@ -434,7 +467,10 @@ class Network(nn.Module):
    
     rois = self._region_proposal(net_conv)
     if cfg.POOLING_MODE == 'crop':
-      pool5 = self._crop_pool_layer(net_conv, rois)
+      if cfg.POOLING_ALIGN == True:
+        pool5 = self._crop_pool_layer_align(net_conv, rois, self._im_info)
+      else:
+        pool5 = self._crop_pool_layer(net_conv, rois)
     else:
       pool5 = self._roi_pool_layer(net_conv, rois)
 
@@ -472,7 +508,10 @@ class Network(nn.Module):
     rois = np.hstack([np.zeros((num_boxes, 1)), boxes]).astype(np.float32) # [0xyxy] 
     rois = Variable(torch.from_numpy(rois).cuda(), volatile=True)
     if cfg.POOLING_MODE == 'crop':
-      pool5 = self._crop_pool_layer(net_conv, rois)
+      if cfg.POOLING_ALIGN == True:
+        pool5 = self._crop_pool_layer_align(net_conv, rois, self._im_info)
+      else:
+        pool5 = self._crop_pool_layer(net_conv, rois)
     else:
       pool5 = self._roi_pool_layer(net_conv, rois)
 
