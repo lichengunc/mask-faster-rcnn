@@ -497,7 +497,7 @@ class Network(nn.Module):
     """
     Arguments:
     - net_conv : Variable cuda (1, 1024, H, W)
-    - boxes    : ndarray (n, 4) in scaled image
+    - boxes    : ndarray (n, 4) in scaled image [xyxy]
     - labels   : ndarray (n, )
     Return
     - masks    : Variable cuda (n, 14, 14), ranging [0,1]
