@@ -17,10 +17,12 @@ import os
 import math
 
 from utils.timer import Timer
-from model.nms_wrapper import nms
 from utils.blob import im_list_to_blob
 from utils.mask_utils import recover_masks, recover_cls_masks
 
+from pycocotools import mask as COCOmask
+
+from model.nms_wrapper import nms
 from model.config import cfg, get_output_dir
 from model.bbox_transform import clip_boxes, bbox_transform_inv
 
@@ -89,8 +91,9 @@ def _rescale_boxes(boxes, inds, scales):
 def im_detect(net, im):
   """Return
   - scores     : (num_rois, num_classes)
-  - pred_boxes : (num_rois, num_classes * 4)
-  - pred_masks : (num_rois, num_classes, 14, 14) float32 ranging [0, 1]
+  - pred_boxes : (num_rois, num_classes * 4) [xyxy] in original image size
+  - net_conv   : Variable cuda (1, 1024, H, W)
+  - im_scale   : float
   """
   blobs, im_scales = _get_blobs(im)
   assert len(im_scales) == 1, "Only single-image batch implemented"
@@ -112,10 +115,7 @@ def im_detect(net, im):
     # Simply repeat the boxes, once for each class
     pred_boxes = np.tile(boxes, (1, scores.shape[1]))
 
-  # # predict masks given pred_boxes
-  # masks = net._predict_masks_from_boxes(net_conv, pred_boxes * im_scales[0]) # (N, C, 14, 14) ranging [0,1]
-
-  return scores, pred_boxes
+  return scores, pred_boxes, net_conv, im_scales[0]
 
 def apply_nms(all_boxes, thresh):
   """Apply non-maximum suppression to all predicted boxes output by the
@@ -155,6 +155,9 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
   #  (x1, y1, x2, y2, score)
   all_boxes = [[[] for _ in range(num_images)]
          for _ in range(imdb.num_classes)]
+  #  all_rles[cls][image] = [rle] array of N rles
+  all_rles = [[[] for _ in range(num_images)] 
+         for _ in range(imdb.num_classes)]
 
   output_dir = get_output_dir(imdb, weights_filename)
   # timers
@@ -164,7 +167,7 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
     im = cv2.imread(imdb.image_path_at(i))
 
     _t['im_detect'].tic()
-    scores, boxes = im_detect(net, im) # (n, 81), (n, 81*4), (n, 81, ih, iw)
+    scores, boxes, net_conv, im_scale = im_detect(net, im) # (n, 81), (n, 81*4), (n, 1024, H, W), float
     _t['im_detect'].toc()
 
     _t['misc'].tic()
@@ -189,6 +192,32 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
         for j in range(1, imdb.num_classes):
           keep = np.where(all_boxes[j][i][:, -1] >= image_thresh)[0]
           all_boxes[j][i] = all_boxes[j][i][keep, :]
+
+    # run mask branch on all_boxes[:][i]
+    accumulated_boxes  = []
+    accumulated_labels = []
+    for j in range(1, imdb.num_classes):
+      if all_boxes[j][i].shape[0] > 0:
+        accumulated_boxes += [all_boxes[j][i][:, :4]]
+        accumulated_labels += [j]*all_boxes[j][i].shape[0]
+    accumulated_boxes = np.vstack(accumulated_boxes)   # acculuate max_per_image boxes [xyxy]
+    accumulated_labels = np.array(accumulated_labels, dtype=np.uint8) # n category labels
+    mask_prob = net._predict_masks_from_boxes_and_labels(net_conv, 
+                            accumulated_boxes * im_scale,  # scaled boxes [xyxy]
+                            accumulated_labels) # (n, 14, 14)
+    mask_prob = mask_prob.data.cpu().numpy() # convert to numpy
+    masks = recover_masks(mask_prob, accumulated_boxes, im.shape[0], im.shape[1]) # (n, ih, iw) uint8 [0,1]
+    masks = (masks > 122.).astype(np.uint8)  # (n, ih, iw) uint8 [0,1] original size
+    
+    # add to all_rles
+    rles = [COCOmask.encode(np.asfortranarray(m)) for m in masks]
+    ri = 0
+    for j in range(1, imdb.num_classes):
+      ri_next = ri+all_boxes[j][i].shape[0]
+      all_rles[j][i] = rles[ri:ri_next]
+      assert len(all_rles[j][i]) == all_boxes[j][i].shape[0]
+      ri = ri_next
+
     _t['misc'].toc()
 
     print('im_detect: {:d}/{:d} {:.3f}s {:.3f}s' \
@@ -200,5 +229,5 @@ def test_net(net, imdb, weights_filename, max_per_image=100, thresh=0.):
     pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
 
   print('Evaluating detections')
-  imdb.evaluate_detections(all_boxes, output_dir)
+  imdb.evaluate_detections(all_boxes, all_rles, output_dir)
 

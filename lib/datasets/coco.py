@@ -51,6 +51,7 @@ class coco(imdb):
     # This mapping tells us where the view's images and proposals come from.
     self._view_map = {
       'minival2014': 'val2014',  # 5k val2014 subset
+      'superminival2014': 'val2014',
       'valminusminival2014': 'val2014',  # val2014 \setminus minival2014
       'test-dev2015': 'test2015',
       'train_minus_refer_valtest2014': 'train2014',
@@ -251,8 +252,7 @@ class coco(imdb):
     print('~~~~ Summary metrics ~~~~')
     coco_eval.summarize()
 
-  def _do_detection_eval(self, res_file, output_dir):
-    ann_type = 'bbox'
+  def _do_detection_eval(self, res_file, output_dir, ann_type='bbox'):
     coco_dt = self._COCO.loadRes(res_file)
     coco_eval = COCOeval(self._COCO, coco_dt)
     coco_eval.params.useSegm = (ann_type == 'segm')
@@ -264,7 +264,7 @@ class coco(imdb):
       pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
     print('Wrote COCO eval results to: {}'.format(eval_file))
 
-  def _coco_results_one_category(self, boxes, cat_id):
+  def _coco_results_one_category(self, boxes, rles, cat_id):
     results = []
     for im_ind, index in enumerate(self.image_index):
       dets = boxes[im_ind].astype(np.float)
@@ -275,14 +275,16 @@ class coco(imdb):
       ys = dets[:, 1]
       ws = dets[:, 2] - xs + 1
       hs = dets[:, 3] - ys + 1
+      rles_at_im = rles[im_ind]  # rles for this image
       results.extend(
         [{'image_id': index,
           'category_id': cat_id,
           'bbox': [xs[k], ys[k], ws[k], hs[k]],
-          'score': scores[k]} for k in range(dets.shape[0])])
+          'score': scores[k],
+          'segmentation': rles_at_im[k]} for k in range(dets.shape[0])])
     return results
 
-  def _write_coco_results_file(self, all_boxes, res_file):
+  def _write_coco_results_file(self, all_boxes, all_rles, res_file):
     # [{"image_id": 42,
     #   "category_id": 18,
     #   "bbox": [258.15,41.29,348.26,243.78],
@@ -295,12 +297,13 @@ class coco(imdb):
                                                        self.num_classes - 1))
       coco_cat_id = self._class_to_coco_cat_id[cls]
       results.extend(self._coco_results_one_category(all_boxes[cls_ind],
+                                                     all_rles[cls_ind],
                                                      coco_cat_id))
     print('Writing results json to {}'.format(res_file))
     with open(res_file, 'w') as fid:
       json.dump(results, fid)
 
-  def evaluate_detections(self, all_boxes, output_dir):
+  def evaluate_detections(self, all_boxes, all_rles, output_dir):
     res_file = osp.join(output_dir, ('detections_' +
                                      self._image_set +
                                      self._year +
@@ -308,10 +311,11 @@ class coco(imdb):
     if self.config['use_salt']:
       res_file += '_{}'.format(str(uuid.uuid4()))
     res_file += '.json'
-    self._write_coco_results_file(all_boxes, res_file)
+    self._write_coco_results_file(all_boxes, all_rles, res_file)
     # Only do evaluation on non-test sets
     if self._image_set.find('test') == -1:
-      self._do_detection_eval(res_file, output_dir)
+      self._do_detection_eval(res_file, output_dir, 'bbox')
+      self._do_detection_eval(res_file, output_dir, 'segm')
     # Optionally cleanup results json file
     if self.config['cleanup']:
       os.remove(res_file)
