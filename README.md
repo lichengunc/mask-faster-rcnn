@@ -76,8 +76,8 @@ Detection Comparison:
 
 | *Detection*|     AP     |    AP50        |    AP75  |
 |----------|------------|----------------|----------------|
-| res101   |  34.1      |    53.7        |    36.8        |
-| res101   |  35.8      |    55.3        |    38.6        |
+| Faster R-CNN   |  34.1      |    53.7        |    36.8        |
+| Our Mask R-CNN   |  35.8      |    55.3        |    38.6        |
 
 
 Segmentation Comparison:
@@ -88,8 +88,8 @@ Segmentation Comparison:
 
 | *Segmentation* |     AP     |    AP50    |    AP75  |
 |----------|------------|------------|------------|
-| res101   |  30.7      |    52.3    |    32.4    |
-| res101   |  32.7      |    54.2    |    34.0    |
+| Original Mask R-CNN   |  32.7      |    54.2    |    34.0    |
+| Our Mask R-CNN     |  30.7      |    52.3    |    32.4    |
 
 ### Demo
 
