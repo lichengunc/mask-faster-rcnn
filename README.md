@@ -94,7 +94,8 @@ Segmentation Comparison:
 ### Pretrained Model
 We provide the model we used in [MattNet](http://gpuvision.cs.unc.edu/refer/) for mask comprehension.
 * res101-notime-1250k: [UNC Server](http://bvision.cs.unc.edu/licheng/pytorch_mask_rcnn/res101_mask_rcnn_iter_1250k.zip)
-Download and put it into `output/res101/coco_2014_train_minus_refer_valtest+coco_2014_valminusminival/notime` 
+
+Download and put the downloaded `.pth` and `.pkl` files into `output/res101/coco_2014_train_minus_refer_valtest+coco_2014_valminusminival/notime` 
 
 ### Demo
 - Follow the ipython notebook of `test/check_model.ipynb` to test our model.
