@@ -72,8 +72,9 @@ Run by (`notime` as extra/tag)
 ```
 
 Detection Comparison:
-- Compared with [Faster R-CNN](https://github.com/ruotianluo/pytorch-faster-rcnn) trained/evaluated on the same images. 
-| Backbone |     AP^bb^ |    AP50        |    AP75  |
+- Compared with [Faster R-CNN](https://github.com/ruotianluo/pytorch-faster-rcnn) trained/evaluated on the same images.
+
+| *Detection*|     AP     |    AP50        |    AP75  |
 |----------|------------|----------------|----------------|
 | res101   |  34.1      |    53.7        |    36.8        |
 | res101   |  35.8      |    55.3        |    38.6        |
@@ -85,7 +86,7 @@ Segmentation Comparison:
 * Our training is single GPU.
 * The shorter border length in our model is 600px instead of 800px.
 
-| Backbone |     AP     |    AP50    |    AP75  |
+| *Segmentation* |     AP     |    AP50    |    AP75  |
 |----------|------------|------------|------------|
 | res101   |  30.7      |    52.3    |    32.4    |
 | res101   |  32.7      |    54.2    |    34.0    |
