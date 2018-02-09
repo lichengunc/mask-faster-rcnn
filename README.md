@@ -4,7 +4,7 @@ A pytorch implementation of Mask RCNN detection framework based on
 * [ruotianluo/pytorch-faster-rcnn](https://github.com/ruotianluo/pytorch-faster-rcnn), developed based on Pytorch + Numpy
 
 This project supports single-GPU training of ResNet101-based Mask R-CNN (without FPN support). 
-The purpose is to support the experiments in [Referring Expression Comprehension](http://gpuvision.cs.unc.edu/refer/), whose [REFER](https://github.com/lichengunc/refer) dataset is a subset of COCO training portion.
+The purpose is to support the experiments in [MattNet](http://gpuvision.cs.unc.edu/refer/), whose [REFER](https://github.com/lichengunc/refer) dataset is a subset of COCO training portion.
 Thus our pre-trained model takes COCO_2014_train_minus_refer_valtest + COCO_2014_valminusminival images for training.
 
 
@@ -91,8 +91,13 @@ Segmentation Comparison:
 | Original Mask R-CNN   |  32.7      |    54.2    |    34.0    |
 | Our Mask R-CNN     |  30.7      |    52.3    |    32.4    |
 
-### Demo
+### Pretrained Model
+We provide the model we used in [MattNet](http://gpuvision.cs.unc.edu/refer/) for mask comprehension.
+* res101-notime-1250k: [UNC Server](http://bvision.cs.unc.edu/licheng/pytorch_mask_rcnn/res101_mask_rcnn_iter_1250k.zip)
+Download and put it into `output/res101/coco_2014_train_minus_refer_valtest+coco_2014_valminusminival/notime` 
 
+### Demo
+- Follow the ipython notebook of `test/check_model.ipynb` to test our model.
 
 
 
