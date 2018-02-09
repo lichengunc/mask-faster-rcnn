@@ -82,7 +82,7 @@ Detection Comparison:
 
 Segmentation Comparison:
 - We compare with [Mask R-CNN](https://arxiv.org/abs/1703.06870) implementation. Note this comparison is slightly unfair to ours, due to
-* We have fewer (~25,000) training images.
+* We have fewer (~6,500) training images.
 * Our training is single GPU.
 * The shorter border length in our model is 600px instead of 800px.
 
