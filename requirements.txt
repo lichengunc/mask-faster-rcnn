@@ -1,0 +1,11 @@
+numpy
+h5py
+matplotlib
+scipy
+scikit-image
+easydict==1.6
+opencv-python
+jupyter
+tensorboardX
+torchvision
+
