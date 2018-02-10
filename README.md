@@ -67,6 +67,11 @@ Run by (`notime` as extra/tag)
 ```
 - Train on COCO 2014 [trainval35k](https://github.com/rbgirshick/py-faster-rcnn/tree/master/models) minus refer_valtest, and test on [minival](https://github.com/rbgirshick/py-faster-rcnn/tree/master/models) (800k/1250k), **35.8** on detection and **30.7** on segmentation (nms).
 
+Checking the training process by calling tensorboard, and check it at `server.cs.unc.edu:port_number`
+```bash
+tensorboard --logdir tensorboard/res101 --port=port_number
+```
+
 
 ### Evaluation
 Run by (`notime` as extra/tag)
