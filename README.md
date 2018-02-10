@@ -29,6 +29,9 @@ git clone https://github.com/cocodataset/cocoapi data/coco
 ```
 
 * **REFER**: Follow the instructions in [REFER](https://github.com/lichengunc/refer) to prepare the annotations for RefCOCO, RefCOCO+ and RefCOCOg.
+```shell
+git clone https://github.com/lichengunc/refer data/refer
+```
 
 * **ImageNet Weights**: Find the resnet101-caffe download link from this [repository](https://github.com/ruotianluo/pytorch-resnet), and download it as `data/imagenet_weights/res101.pth`.
 
